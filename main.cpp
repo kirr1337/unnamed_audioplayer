@@ -15,13 +15,13 @@ int main() {
     sf::Text text("next song", font, 32);
     sf::Music music;
     sf::Texture vynyl_texture;
-    vynyl_texture.loadFromFile("vynyl.png");
+    vynyl_texture.loadFromFile("resources/icons/vynyl.png");
     vynyl_texture.setSmooth(true);
     sf::Sprite vynyl_sprite(vynyl_texture);
 
     window.setFramerateLimit(60);
 
-    font.loadFromFile("Samson.ttf");
+    font.loadFromFile("resources/fonts/Samson.ttf");
 
     text.setColor(sf::Color::Black);
     text.setPosition(320, 250);
