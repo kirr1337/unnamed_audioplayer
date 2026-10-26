@@ -3,6 +3,7 @@
 #include <SFML/Audio.hpp>
 #include "imgui-SFML.h"
 #include "imgui.h"
+#include "portable-file-dialogs.h"
 
 int main() {
     ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoTitleBar
@@ -14,7 +15,9 @@ int main() {
     sf::Font font;
     sf::Text text("next song", font, 32);
     sf::Music music;
+    std::string currentMusicPath;
     sf::Texture vynyl_texture;
+
     vynyl_texture.loadFromFile("resources/icons/vynyl.png");
     vynyl_texture.setSmooth(true);
     sf::Sprite vynyl_sprite(vynyl_texture);
@@ -59,7 +62,8 @@ int main() {
         ImGui::SFML::Update(window, deltaClock.restart());
 
 
-        ImGui::SetNextWindowPos(ImVec2(30, 430));
+        ImGui::SetNextWindowPos(ImVec2(30, 360));
+        ImGui::SetNextWindowSize(ImVec2(222, 200));
         ImGui::Begin("Test", nullptr, window_flags);
 
         if (ImGui::Button("<<", ImVec2(50, 50))) {
@@ -71,12 +75,10 @@ int main() {
         ImGui::SetCursorPosX(40);
 
         if (ImGui::Button("Play", ImVec2(150, 50))) {
-            if (!music.openFromFile("music.wav"))
-                return -1;
+            if (!music.openFromFile(currentMusicPath))
+                text.setString("Please, select song");
 
-            vynyl_sprite.rotate(90.0f * dt.asSeconds());
-
-            music.setVolume(10);
+           // music.setVolume(10);
 
             music.play();
             std::cout << "the music has been played!\n";
@@ -89,8 +91,28 @@ int main() {
             std::cout << ">>\n";
         }
 
+        ImGui::SameLine();
+        ImGui::SetCursorPos(ImVec2(15, 130));
+
+        // loading custom music from disk
+        if (ImGui::Button("load music", ImVec2(100, 50))) {
+            // calling the OS explorer
+            auto selection = pfd::open_file("Select song", ".",{
+            "Audio files", "*.wav", "*.ogg", "All files", "*"
+            }).result();
+
+            // if selection not empty, then current music path = what the user has chosen
+            if (!selection.empty()) {
+                currentMusicPath = selection[0];
+            }
+
+           // text.setString(currentMusicPath);
+        }
+
+        // Ending the ImGui context
         ImGui::End();
 
+        // Every frame, spinning the vynyl picture
         if (music.getStatus() == sf::Music::Playing) {
             vynyl_sprite.rotate(90.0f * dt.asSeconds());
         }
@@ -104,7 +126,6 @@ int main() {
         ImGui::SFML::Render(window);
 
         window.display();
-
     }
 
     // Shutdown the ImGui context
