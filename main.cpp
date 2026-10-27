@@ -1,3 +1,4 @@
+#include <filesystem>
 #include <iostream>
 #include <SFML/Graphics.hpp>
 #include <SFML/Audio.hpp>
@@ -5,32 +6,45 @@
 #include "imgui.h"
 #include "portable-file-dialogs.h"
 
+
 int main() {
+    constexpr int screen_Width = 800;
+    constexpr int screen_Height = 600;
+
     ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoTitleBar
     | ImGuiWindowFlags_NoResize
     | ImGuiWindowFlags_NoMove
     | ImGuiWindowFlags_NoResize;
 
-    sf::RenderWindow window(sf::VideoMode(800, 600), "Hello!", sf::Style::Close); // Window
+    sf::RenderWindow window(sf::VideoMode(screen_Width, screen_Height), "Hello!", sf::Style::Close); // Window
     sf::Font font;
     sf::Text text("next song", font, 32);
     sf::Music music;
-    std::string currentMusicPath;
-    sf::Texture vynyl_texture;
 
+    sf::Texture vynyl_texture;
     vynyl_texture.loadFromFile("resources/icons/vynyl.png");
     vynyl_texture.setSmooth(true);
     sf::Sprite vynyl_sprite(vynyl_texture);
+
+    sf::Texture star_Texture;
+    star_Texture.loadFromFile("resources/icons/star.png");
+    star_Texture.setSmooth(true);
+    sf::Sprite star_sprite(star_Texture);
+
+    std::string currentMusicPath;
 
     window.setFramerateLimit(60);
 
     font.loadFromFile("resources/fonts/Samson.ttf");
 
     text.setColor(sf::Color::Black);
-    text.setPosition(320, 250);
+    text.setPosition(screen_Width / 2 - 50, screen_Height / 2 - 50);
 
     vynyl_sprite.setPosition(700, 500);
     vynyl_sprite.setScale(0.07f, 0.07f);
+
+    star_sprite.setPosition(screen_Width - 200, screen_Height - 200);
+    star_sprite.setScale(0.5f, 0.5f);
 
 
     if (!ImGui::SFML::Init(window)) {
@@ -55,7 +69,7 @@ int main() {
 
             if (event.type == sf::Event::Closed) {
                 window.close();
-                std::cout << "Bye";
+                std::cout << "The window closed";
             }
         }
 
@@ -64,7 +78,7 @@ int main() {
 
         ImGui::SetNextWindowPos(ImVec2(30, 360));
         ImGui::SetNextWindowSize(ImVec2(222, 200));
-        ImGui::Begin("Test", nullptr, window_flags);
+        ImGui::Begin("Controller", nullptr, window_flags);
 
         if (ImGui::Button("<<", ImVec2(50, 50))) {
             std::cout << "<<\n";
@@ -75,10 +89,14 @@ int main() {
         ImGui::SetCursorPosX(40);
 
         if (ImGui::Button("Play", ImVec2(150, 50))) {
-            if (!music.openFromFile(currentMusicPath))
+            if (!music.openFromFile(currentMusicPath)) {
+                text.setColor(sf::Color::Red);
                 text.setString("Please, select song");
+            }
 
-           // music.setVolume(10);
+            text.setColor(sf::Color::Black);
+
+            // music.setVolume(10);
 
             music.play();
             std::cout << "the music has been played!\n";
@@ -106,15 +124,17 @@ int main() {
                 currentMusicPath = selection[0];
             }
 
-           // text.setString(currentMusicPath);
+            std::filesystem::path p(currentMusicPath);
+            text.setString(sf::String(p.filename().string()));
         }
 
         // Ending the ImGui context
         ImGui::End();
 
-        // Every frame, spinning the vynyl picture
+        // Every frame, we're spinning the vynyl picture
         if (music.getStatus() == sf::Music::Playing) {
             vynyl_sprite.rotate(90.0f * dt.asSeconds());
+          //  star_sprite.move(100 * dt.asSeconds(), 100 * dt.asSeconds());
         }
 
         window.clear(sf::Color::White);
@@ -122,6 +142,7 @@ int main() {
         // Drawing
         window.draw(text);
         window.draw(vynyl_sprite);
+        window.draw(star_sprite);
 
         ImGui::SFML::Render(window);
 
