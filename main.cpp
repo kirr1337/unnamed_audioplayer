@@ -11,12 +11,14 @@ int main() {
     constexpr int screen_Width = 800;
     constexpr int screen_Height = 600;
 
+    int x = -70, y = 0;
+
     ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoTitleBar
     | ImGuiWindowFlags_NoResize
     | ImGuiWindowFlags_NoMove
     | ImGuiWindowFlags_NoResize;
 
-    sf::RenderWindow window(sf::VideoMode(screen_Width, screen_Height), "Hello!", sf::Style::Close); // Window
+    sf::RenderWindow window(sf::VideoMode(screen_Width, screen_Height), "Unnamed_AudioPlayer", sf::Style::Close); // Window
     sf::Font font;
     sf::Text text("next song", font, 32);
     sf::Music music;
@@ -29,7 +31,6 @@ int main() {
     sf::Texture star_Texture;
     star_Texture.loadFromFile("resources/icons/star.png");
     star_Texture.setSmooth(true);
-    sf::Sprite star_sprite(star_Texture);
 
     std::string currentMusicPath;
 
@@ -43,12 +44,20 @@ int main() {
     vynyl_sprite.setPosition(700, 500);
     vynyl_sprite.setScale(0.07f, 0.07f);
 
-    star_sprite.setPosition(screen_Width - 200, screen_Height - 200);
-    star_sprite.setScale(0.5f, 0.5f);
+    std::vector<sf::Sprite> star_sprites(10);
+
+    for (int i = 0; i < star_sprites.size(); i++) {
+        star_sprites[i].setTexture(star_Texture);
+        star_sprites[i].setScale(0.5f, 0.5f);
+
+        y = i * 80.f;
+
+        star_sprites[i].setPosition(x, y);
+    }
 
 
     if (!ImGui::SFML::Init(window)) {
-        std::printf("Error!\nCannot init window");
+        std::printf( "Error!\nCannot init window");
         return -1; // If cannot init window
     }
 
@@ -93,13 +102,24 @@ int main() {
                 text.setColor(sf::Color::Red);
                 text.setString("Please, select song");
             }
+            else {
+                for (int i = 0; i < star_sprites.size(); i++) {
+                    star_sprites[i].setTexture(star_Texture);
+                    star_sprites[i].setScale(0.5f, 0.5f);
 
-            text.setColor(sf::Color::Black);
+                    star_sprites[i].rotate(45);
+                    y = i * 80.f;
 
-            // music.setVolume(10);
+                    star_sprites[i].setPosition(x, y);
+                }
 
-            music.play();
-            std::cout << "the music has been played!\n";
+                text.setColor(sf::Color::Black);
+
+                // music.setVolume(10);
+
+                music.play();
+                std::cout << "the music has been played!\n";
+            }
         }
 
         ImGui::SameLine();
@@ -134,7 +154,20 @@ int main() {
         // Every frame, we're spinning the vynyl picture
         if (music.getStatus() == sf::Music::Playing) {
             vynyl_sprite.rotate(90.0f * dt.asSeconds());
-          //  star_sprite.move(100 * dt.asSeconds(), 100 * dt.asSeconds());
+            for (int i = 0; i < star_sprites.size(); i++) {
+                star_sprites[i].move(100 * dt.asSeconds(), 0);
+                star_sprites[i].rotate((std::rand() % 100 - 50) * dt.asSeconds());
+
+                if (star_sprites[i].getPosition().x > 830.0f) {
+                    float newY = i * 80.f;
+                    star_sprites[i].setPosition(x, newY);
+                }
+            }
+        }
+        if (music.getStatus() != sf::Music::Playing) {
+            for (auto& stars : star_sprites) {
+                stars.move(0, 100 * dt.asSeconds());
+            }
         }
 
         window.clear(sf::Color::White);
@@ -142,7 +175,9 @@ int main() {
         // Drawing
         window.draw(text);
         window.draw(vynyl_sprite);
-        window.draw(star_sprite);
+        for (auto& star : star_sprites) {
+            window.draw(star);
+        }
 
         ImGui::SFML::Render(window);
 
