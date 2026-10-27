@@ -3,8 +3,8 @@
 #include <SFML/Graphics.hpp>
 #include <SFML/Audio.hpp>
 #include "imgui-SFML.h"
-#include "imgui.h"
 #include "portable-file-dialogs.h"
+#include "cmake-build-debug/_deps/imgui-src/imgui.h"
 
 
 int main() {
@@ -90,7 +90,7 @@ int main() {
         ImGui::Begin("Controller", nullptr, window_flags);
 
         if (ImGui::Button("<<", ImVec2(50, 50))) {
-            std::cout << "<<\n";
+            std::cout << "<<\n[IN WORK!]\n";
         }
 
         ImGui::SameLine();
@@ -98,35 +98,30 @@ int main() {
         ImGui::SetCursorPosX(40);
 
         if (ImGui::Button("Play", ImVec2(150, 50))) {
-            if (!music.openFromFile(currentMusicPath)) {
-                text.setColor(sf::Color::Red);
-                text.setString("Please, select song");
-            }
-            else {
                 for (int i = 0; i < star_sprites.size(); i++) {
                     star_sprites[i].setTexture(star_Texture);
                     star_sprites[i].setScale(0.5f, 0.5f);
 
-                    star_sprites[i].rotate(45);
+                    star_sprites[i].rotate(0);
+
                     y = i * 80.f;
 
                     star_sprites[i].setPosition(x, y);
                 }
 
-                text.setColor(sf::Color::Black);
+            text.setColor(sf::Color::Black);
 
-                // music.setVolume(10);
+            // music.setVolume(10);
 
-                music.play();
-                std::cout << "the music has been played!\n";
-            }
+            music.play();
+            std::cout << "the music has been played!\n";
         }
 
         ImGui::SameLine();
         ImGui::SetCursorPosX(165);
 
         if (ImGui::Button(">>", ImVec2(50, 50))) {
-            std::cout << ">>\n";
+            std::cout << ">>\n[IN WORK!]\n";
         }
 
         ImGui::SameLine();
@@ -136,16 +131,27 @@ int main() {
         if (ImGui::Button("load music", ImVec2(100, 50))) {
             // calling the OS explorer
             auto selection = pfd::open_file("Select song", ".",{
-            "Audio files", "*.wav", "*.ogg", "All files", "*"
+            "Audio files", "*.mp3;" "*.wav;" "*.ogg", "All files", "*"
             }).result();
 
             // if selection not empty, then current music path = what the user has chosen
             if (!selection.empty()) {
                 currentMusicPath = selection[0];
+                music.openFromFile(currentMusicPath);
             }
+            if (selection.empty()) {
+                text.setString("Please..\nSelect the song");
+            }
+            else {
+                std::filesystem::path p(currentMusicPath);
+                text.setString(sf::String(p.filename().string()));
+            }
+        }
 
-            std::filesystem::path p(currentMusicPath);
-            text.setString(sf::String(p.filename().string()));
+        ImGui::SetCursorPos(ImVec2(140, 130));
+
+        if (ImGui::Button("pause", ImVec2(50, 50))) {
+            music.pause();
         }
 
         // Ending the ImGui context
