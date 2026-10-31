@@ -3,15 +3,19 @@
 #include <SFML/Graphics.hpp>
 #include <SFML/Audio.hpp>
 #include "imgui-SFML.h"
-#include "portable-file-dialogs.h"
-#include "cmake-build-debug/_deps/imgui-src/imgui.h"
-
+#include "../portable-file-dialogs.h"
+#include "Utils.h"
+#include "imgui.h"
 
 int main() {
     constexpr int screen_Width = 800;
     constexpr int screen_Height = 600;
 
-    int x = -70, y = 0;
+    static int seekCooldown = 0.0f;
+
+    bool isLooped = false;
+
+    int x = -70;
 
     ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoTitleBar
     | ImGuiWindowFlags_NoResize
@@ -32,29 +36,24 @@ int main() {
     star_Texture.loadFromFile("resources/icons/star.png");
     star_Texture.setSmooth(true);
 
+    sf::Sprite star_sprite(star_Texture);
+
     std::string currentMusicPath;
+    std::string isLoopedStr;
 
     window.setFramerateLimit(60);
 
     font.loadFromFile("resources/fonts/Samson.ttf");
 
     text.setColor(sf::Color::Black);
-    text.setPosition(screen_Width / 2 - 50, screen_Height / 2 - 50);
+    text.setPosition(screen_Width / 2 - 200, screen_Height / 2 - 50);
 
     vynyl_sprite.setPosition(700, 500);
     vynyl_sprite.setScale(0.07f, 0.07f);
 
-    std::vector<sf::Sprite> star_sprites(10);
+    std::vector<FallingStars> star_sprites(15);
 
-    for (int i = 0; i < star_sprites.size(); i++) {
-        star_sprites[i].setTexture(star_Texture);
-        star_sprites[i].setScale(0.5f, 0.5f);
-
-        y = i * 80.f;
-
-        star_sprites[i].setPosition(x, y);
-    }
-
+    Utils::initIcons(star_sprites, star_sprite);
 
     if (!ImGui::SFML::Init(window)) {
         std::printf( "Error!\nCannot init window");
@@ -71,6 +70,11 @@ int main() {
         sf::Time dt = deltaClock.restart();
         sf::Event event;
 
+        float currentSec = music.getPlayingOffset().asSeconds();
+        float totalSec = music.getDuration().asSeconds();
+
+        std::string timeLabel = Utils::formatTime(sf::seconds(currentSec)) + " / " + Utils::formatTime(sf::seconds(totalSec));
+
         // Check events
         while (window.pollEvent(event)) {
 
@@ -85,12 +89,17 @@ int main() {
         ImGui::SFML::Update(window, deltaClock.restart());
 
 
-        ImGui::SetNextWindowPos(ImVec2(30, 360));
-        ImGui::SetNextWindowSize(ImVec2(222, 200));
+        ImGui::SetNextWindowPos(ImVec2(15, 390));
+        ImGui::SetNextWindowSize(ImVec2(450, 200));
         ImGui::Begin("Controller", nullptr, window_flags);
 
         if (ImGui::Button("<<", ImVec2(50, 50))) {
-            std::cout << "<<\n[IN WORK!]\n";
+            sf::Time currentTime = music.getPlayingOffset();
+            music.setPlayingOffset(currentTime - sf::seconds(10));
+            if (currentTime <= sf::seconds(10)) {
+                music.setPlayingOffset(sf::seconds(0));
+            }
+            std::cout << "<<\n";
         }
 
         ImGui::SameLine();
@@ -98,16 +107,7 @@ int main() {
         ImGui::SetCursorPosX(40);
 
         if (ImGui::Button("Play", ImVec2(150, 50))) {
-                for (int i = 0; i < star_sprites.size(); i++) {
-                    star_sprites[i].setTexture(star_Texture);
-                    star_sprites[i].setScale(0.5f, 0.5f);
-
-                    star_sprites[i].rotate(0);
-
-                    y = i * 80.f;
-
-                    star_sprites[i].setPosition(x, y);
-                }
+            Utils::restartIcons(star_sprites, x, -30);
 
             text.setColor(sf::Color::Black);
 
@@ -115,13 +115,16 @@ int main() {
 
             music.play();
             std::cout << "the music has been played!\n";
+            std::cout << totalSec << "\n" << currentSec;
         }
 
         ImGui::SameLine();
-        ImGui::SetCursorPosX(165);
+        ImGui::SetCursorPosX(160);
 
         if (ImGui::Button(">>", ImVec2(50, 50))) {
-            std::cout << ">>\n[IN WORK!]\n";
+            sf::Time currentTime = music.getPlayingOffset();
+            music.setPlayingOffset(currentTime + sf::seconds(10));
+            std::cout << ">>\n";
         }
 
         ImGui::SameLine();
@@ -154,25 +157,57 @@ int main() {
             music.pause();
         }
 
+        ImGui::SetCursorPos(ImVec2(380, 8));
+
+        if (ImGui::Button("loop", ImVec2(50, 50))) {
+            std::cout << "\nLooped\n";
+            isLooped = !isLooped;
+            music.setLoop(isLooped);
+            std::cout << isLooped;
+        }
+
+        if (seekCooldown > 0.0f) {
+            seekCooldown -= dt.asSeconds();
+        }
+
+        ImGui::SetCursorPos(ImVec2(230, 110));
+        ImGui::SetNextItemWidth(210.0f);
+
+        if (ImGui::SliderFloat("##progress", &currentSec, 0.0f, totalSec, "%.1f")) {
+            currentSec = std::clamp(currentSec, 0.0f, totalSec);
+
+            music.setPlayingOffset(sf::seconds(currentSec));
+
+            seekCooldown = 0.2f;
+        }
+
+        if (currentSec > totalSec) {
+            music.setPlayingOffset(sf::seconds(0));
+        }
+
+        if (!ImGui::IsItemActive() && seekCooldown <= 0.0f) {
+            currentSec = music.getPlayingOffset().asSeconds();
+        }
+
+        ImGui::SameLine();
+        ImGui::SetCursorPos(ImVec2(230, 140));
+        ImGui::Text("total: %s", timeLabel.c_str());
+
+        ImGui::SetCursorPos(ImVec2(230, 30));
+        ImGui::Text("Looped = %s", isLooped ? "true" : "false");
+
         // Ending the ImGui context
         ImGui::End();
 
-        // Every frame, we're spinning the vynyl picture
+        // Every frame, we're spinning the vynyl picture and moving stars
         if (music.getStatus() == sf::Music::Playing) {
             vynyl_sprite.rotate(90.0f * dt.asSeconds());
-            for (int i = 0; i < star_sprites.size(); i++) {
-                star_sprites[i].move(100 * dt.asSeconds(), 0);
-                star_sprites[i].rotate((std::rand() % 100 - 50) * dt.asSeconds());
-
-                if (star_sprites[i].getPosition().x > 830.0f) {
-                    float newY = i * 80.f;
-                    star_sprites[i].setPosition(x, newY);
-                }
-            }
+            Utils::doIconMovement(star_sprites, dt);
         }
+
         if (music.getStatus() != sf::Music::Playing) {
             for (auto& stars : star_sprites) {
-                stars.move(0, 100 * dt.asSeconds());
+                stars.sprite.move(-100 * dt.asSeconds(), 0);
             }
         }
 
@@ -182,7 +217,7 @@ int main() {
         window.draw(text);
         window.draw(vynyl_sprite);
         for (auto& star : star_sprites) {
-            window.draw(star);
+            window.draw(star.sprite);
         }
 
         ImGui::SFML::Render(window);

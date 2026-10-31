@@ -8,8 +8,9 @@ set(SFML_DIR "C:\\SFML-2.6.2\\lib\\cmake\\SFML")
 
 find_package(SFML 2.6 COMPONENTS graphics window system REQUIRED)
 
-add_executable(sfml-test main.cpp
-        main.cpp
+add_executable(sfml-test
+        src/main.cpp
+        src/Utils.cpp
 )
 
 target_link_libraries(sfml-test PRIVATE sfml-graphics sfml-window sfml-audio sfml-system)
