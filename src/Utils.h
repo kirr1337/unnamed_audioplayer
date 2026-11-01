@@ -9,6 +9,8 @@
 #include <SFML/System/Time.hpp>
 #include <SFML/Graphics.hpp>
 
+#include "sol/sol.hpp"
+
 
 namespace sf {
     class Texture;
@@ -25,7 +27,7 @@ class Utils {
 public:
 
     static std::string formatTime(sf::Time time);
-    static void initIcons(std::vector<FallingStars>& sprites, const sf::Sprite& sprite);
+    static void initIcons(std::vector<FallingStars>& sprites, const sf::Sprite& sprite, sol::state& lua);
     static void restartIcons(std::vector<FallingStars>& sprites, float x, float y);
     static void doIconMovement(std::vector<FallingStars>& sprites, sf::Time deltaTime);
 };

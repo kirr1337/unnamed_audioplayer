@@ -6,6 +6,7 @@
 
 #include <iomanip>
 #include "sstream"
+#include "sol/sol.hpp"
 
 std::string Utils::formatTime(sf::Time time) {
     // Getting current amount seconds
@@ -25,6 +26,8 @@ std::string Utils::formatTime(sf::Time time) {
 /**
  *
  * @param sprites
+ * @param sprite
+ * @param lua
  * @param textures
  * @param sizeX
  * @param sizeY
@@ -33,11 +36,26 @@ std::string Utils::formatTime(sf::Time time) {
  * this function need for initialization icons, obviously...
  */
 
-void Utils::initIcons(std::vector<FallingStars> &sprites, const sf::Sprite &sprite) {
+void Utils::initIcons(std::vector<FallingStars> &sprites, const sf::Sprite &sprite, sol::state& lua) {
+    sol::function getRandomValue = lua["getRandomValue"];
+
+    if (!getRandomValue.valid()) {
+        std::cerr << "Function doenst found\nUsing default values.";
+    }
+
     for (size_t i = 0; i < sprites.size(); ++i) {
+        int starSpeed = 0;
+
+        // if lua script valid
+        if (getRandomValue.valid()) {
+            starSpeed = getRandomValue();
+        }
+        else starSpeed = 80.0f + std::rand() % 121; // or else, we get the c++ logic
+
+        std::cout << starSpeed << "\n";
 
         sprites.at(i).sprite = sprite;
-        sprites.at(i).speed = 80.0f + std::rand() % 120;
+        sprites.at(i).speed = starSpeed;
         sprites.at(i).swayAmp = 20.0f + std::rand() % 40;
 
         sprites.at(i).sprite.setScale(0.5f, 0.5f);

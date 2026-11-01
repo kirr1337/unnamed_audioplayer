@@ -277,7 +277,8 @@ protected:
 
     std::string powershell_quote(std::string const &str) const;
     std::string osascript_quote(std::string const &str) const;
-    std::string shell_quote(std::string const &str) const;
+
+    static std::string shell_quote(std::string const &str);
 
     // Keep handle to executing command
     std::shared_ptr<executor> m_async;
@@ -1048,8 +1049,7 @@ inline std::string internal::dialog::osascript_quote(std::string const &str) con
 
 // Properly quote a string for the shell: just replace ' with '\''
 // XXX: this is no longer used but I would like to keep it around just in case
-inline std::string internal::dialog::shell_quote(std::string const &str) const
-{
+inline std::string internal::dialog::shell_quote(std::string const &str) {
     return "'" + std::regex_replace(str, std::regex("'"), "'\\''") + "'";
 }
 
@@ -1538,7 +1538,7 @@ inline notify::notify(std::string const &title,
 
     ENUMRESNAMEPROC icon_enum_callback = [](HMODULE, LPCTSTR, LPTSTR lpName, LONG_PTR lParam) -> BOOL
     {
-        ((NOTIFYICONDATAW *)lParam)->hIcon = ::LoadIcon(GetModuleHandle(nullptr), lpName);
+        reinterpret_cast<NOTIFYICONDATAW *>(lParam)->hIcon = ::LoadIcon(GetModuleHandle(nullptr), lpName);
         return false;
     };
 
@@ -1547,8 +1547,8 @@ inline notify::notify(std::string const &title,
 
     nid->uTimeout = 5000;
 
-    StringCchCopyW(nid->szInfoTitle, ARRAYSIZE(nid->szInfoTitle), internal::str2wstr(title).c_str());
-    StringCchCopyW(nid->szInfo, ARRAYSIZE(nid->szInfo), internal::str2wstr(message).c_str());
+    StringCchCopyW(nid->szInfoTitle, std::size(nid->szInfoTitle), internal::str2wstr(title).c_str());
+    StringCchCopyW(nid->szInfo, std::size(nid->szInfo), internal::str2wstr(message).c_str());
 
     // Display the new icon
     Shell_NotifyIconW(NIM_ADD, nid.get());

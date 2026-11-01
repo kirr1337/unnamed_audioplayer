@@ -3,11 +3,21 @@
 #include <SFML/Graphics.hpp>
 #include <SFML/Audio.hpp>
 #include "imgui-SFML.h"
-#include "../portable-file-dialogs.h"
+#include "../libs/portable-file-dialogs.h"
 #include "Utils.h"
 #include "imgui.h"
 
 int main() {
+    sol::state lua;
+    lua.open_libraries(sol::lib::base, sol::lib::math);
+
+    try {
+        lua.script_file("config.lua");
+    }
+    catch (std::exception exception) {
+        std::cout << "Error: " << exception.what() << "\n";
+    }
+
     constexpr int screen_Width = 800;
     constexpr int screen_Height = 600;
 
@@ -53,7 +63,7 @@ int main() {
 
     std::vector<FallingStars> star_sprites(15);
 
-    Utils::initIcons(star_sprites, star_sprite);
+    Utils::initIcons(star_sprites, star_sprite, lua);
 
     if (!ImGui::SFML::Init(window)) {
         std::printf( "Error!\nCannot init window");
