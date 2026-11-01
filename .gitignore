@@ -1,12 +1,10 @@
-# Папки сборки CMake (там лежат скомпилированные .exe и .dll)
+
 cmake-build-*/
 build/
 
-# Настройки IDE (CLion)
 .idea/
 *.iml
 
-# Скомпилированные файлы и библиотеки
 *.o
 *.obj
 *.a
@@ -15,6 +13,5 @@ build/
 *.dll
 *.exe
 
-# Временные файлы системы
 .DS_Store
 Thumbs.dbc
